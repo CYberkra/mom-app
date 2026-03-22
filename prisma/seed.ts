@@ -2,9 +2,12 @@ import 'dotenv/config';
 import { PrismaClient } from '../src/generated/prisma';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
-// Create adapter with URL
+// 从环境变量读取数据库 URL，Railway 部署时使用 file:/app/data/dev.db
+const databaseUrl = process.env.DATABASE_URL || 'file:./prisma/dev.db';
+
+// Create adapter with URL from environment variable
 const adapter = new PrismaBetterSqlite3({
-  url: 'file:./prisma/dev.db',
+  url: databaseUrl,
 });
 
 // Create PrismaClient with adapter

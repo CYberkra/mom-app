@@ -5,9 +5,12 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Create adapter with URL
+// 从环境变量读取数据库 URL，Railway 部署时使用 file:/app/data/dev.db
+const databaseUrl = process.env.DATABASE_URL || "file:./prisma/dev.db";
+
+// Create adapter with URL from environment variable
 const adapter = new PrismaBetterSqlite3({
-  url: "file:./prisma/dev.db",
+  url: databaseUrl,
 });
 
 export const prisma =
