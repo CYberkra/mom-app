@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @default("妈妈")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Settings stored as JSON string
+  settings String   @default("{}")
+
+  journalEntries JournalEntry[]
+}
+
+model DailyDevotion {
+  id                Int      @id @default(autoincrement())
+  date              DateTime @unique
+  title             String
+  scriptureRef      String   // 经文引用，如 "约翰福音 3:16"
+  scriptureText     String   // 经文内容
+  explanation       String   // 白话理解
+  keywords          String   // 关键词解释
+  reflectionQuestions String // 默想问题
+  prayer            String   // 今日祷告
+  createdAt         DateTime @default(now())
+
+  favorites Favorite[] @relation("DevotionFavorite")
+}
+
+model ScriptureExplanation {
+  id                Int      @id @default(autoincrement())
+  query             String   // 用户查询的经文或问题
+  explanation       String   // 基础解释
+  simpleExplanation String?  // 简单解释
+  lifeExample       String?  // 生活例子
+  createdAt         DateTime @default(now())
+
+  favorites Favorite[] @relation("ExplanationFavorite")
+}
+
+model MemoryVerse {
+  id            Int      @id @default(autoincrement())
+  scriptureRef  String   // 经文引用
+  scriptureText String   // 经文内容
+  addedAt       DateTime @default(now())
+
+  practiceLogs  MemoryPracticeLog[]
+  favorites     Favorite[] @relation("VerseFavorite")
+}
+
+model MemoryPracticeLog {
+  id           Int      @id @default(autoincrement())
+  memoryVerseId Int
+  practiceDate DateTime @default(now())
+  score        Int      @default(0) // 练习得分，0-100
+  completed    Boolean  @default(false)
+  streak       Int      @default(0) // 连续打卡天数
+
+  memoryVerse MemoryVerse @relation(fields: [memoryVerseId], references: [id])
+
+  @@index([memoryVerseId])
+  @@index([practiceDate])
+}
+
+model JournalEntry {
+  id        Int      @id @default(autoincrement())
+  entryDate DateTime @default(now())
+  content   String   // 用户输入的内容
+  aiSummary String?  // AI整理的简短记录
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int?
+  user   User?  @relation(fields: [userId], references: [id])
+
+  favorites Favorite[] @relation("JournalFavorite")
+
+  @@index([userId])
+  @@index([entryDate])
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  type      String   // 'devotion', 'verse', 'explanation', 'journal', 'hymn'
+  createdAt DateTime @default(now())
+
+  // Relations to different content types
+  devotionId Int?
+  devotion   DailyDevotion? @relation("DevotionFavorite", fields: [devotionId], references: [id])
+
+  explanationId Int?
+  explanation   ScriptureExplanation? @relation("ExplanationFavorite", fields: [explanationId], references: [id])
+
+  verseId Int?
+  verse   MemoryVerse? @relation("VerseFavorite", fields: [verseId], references: [id])
+
+  journalId Int?
+  journal   JournalEntry? @relation("JournalFavorite", fields: [journalId], references: [id])
+
+  hymnId Int?
+  hymn   Hymn? @relation("HymnFavorite", fields: [hymnId], references: [id])
+
+  @@index([type])
+  @@index([devotionId])
+  @@index([explanationId])
+  @@index([verseId])
+  @@index([journalId])
+  @@index([hymnId])
+}
+
+model Hymn {
+  id        Int      @id @default(autoincrement())
+  title     String   // 诗歌标题
+  number    String?  // 诗歌编号
+  firstLine String?  // 首句
+  lyrics    String   // 完整歌词
+  tags      String?  // 标签，逗号分隔
+  source    String?  // 来源（如：赞美诗、诗歌本等）
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  favorites Favorite[] @relation("HymnFavorite")
+
+  @@index([title])
+  @@index([number])
+  @@index([firstLine])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  time      String   // 提醒时间，格式 "HH:MM"
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([enabled])
+}
